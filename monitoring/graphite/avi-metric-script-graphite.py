@@ -277,7 +277,7 @@ class avi_metrics():
                             srvc_engn_dict[entry['name']] = 0
             if len(srvc_engn_dict) > 0:
                 for entry in srvc_engn_dict:
-                    send_value_graphite('network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.vs_count' %entry, srvc_engn_dict[entry], int(time.time()))
+                    send_value_graphite('network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.vs_count' %entry.replace('.','_'), srvc_engn_dict[entry], int(time.time()))
             temp_total_time = str(time.time()-temp_start_time)
             if args.debug == True:
                 print(str(datetime.now())+' '+self.avi_controller+': func srvc_engn_vs_count completed, executed in '+temp_total_time+' seconds')
@@ -415,7 +415,7 @@ class avi_metrics():
                                     metric_name = entry['header']['name'].replace('.','_')
                                     metric_value = entry['data'][0]['value']
                                     x = graphite_class
-                                    x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.%s' %(se_name, metric_name)
+                                    x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.%s' %(se_name.replace('.','_'), metric_name)
                                     x.value = metric_value
                                     x.timestamp = int(time.time())
                                     graphite_class_list.append(x)
@@ -429,7 +429,7 @@ class avi_metrics():
                             class graphite_class(): pass
                             health_metric = s['series'][0]['data'][0]['value']
                             x = graphite_class
-                            x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.healthscore' %se_name
+                            x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.healthscore' %se_name.replace('.','_')
                             x.value = health_metric
                             x.timestamp = int(time.time())
                             graphite_class_list.append(x)
@@ -500,7 +500,7 @@ class avi_metrics():
                                         for v in p['vs_names']:
                                             class graphite_class(): pass
                                             y = graphite_class
-                                            y.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.advertised_vs.%s.%s' %(se_name, v.replace('.','_'), peer_ip)
+                                            y.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.advertised_vs.%s.%s' %(se_name.replace('.','_'), v.replace('.','_'), peer_ip)
                                             y.value = 1
                                             y.timestamp = int(time.time())
                                             graphite_class_list.append(y)
@@ -509,7 +509,7 @@ class avi_metrics():
                                 #send_value_graphite('network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.bgp-peer.%s' %(se_name, peer_ip), peer_state, int(time.time()))
                                 class graphite_class(): pass
                                 x = graphite_class
-                                x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.bgp-peer.%s' %(se_name, peer_ip)
+                                x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.bgp-peer.%s' %(se_name.replace('.','_'), peer_ip)
                                 x.value = peer_state
                                 x.timestamp = int(time.time())
                                 graphite_class_list.append(x)
@@ -899,14 +899,14 @@ class avi_metrics():
                 if quarantined_int > 0:
                     class graphite_class(): pass
                     x = graphite_class
-                    x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.%s' %(se_name, 'quarantined_vnics')
+                    x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.%s' %(se_name.replace('.','_'), 'quarantined_vnics')
                     x.value = quarantined_int
                     x.timestamp = int(time.time())
                     graphite_class_list.append(x)
                 elif avi_internal == number_of_ints:
                     class graphite_class(): pass
                     x = graphite_class
-                    x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.%s' %(se_name, 'aci_vnic_program_error')
+                    x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.%s' %(se_name.replace('.','_'), 'aci_vnic_program_error')
                     x.value = 1
                     x.timestamp = int(time.time())
                     graphite_class_list.append(x)
@@ -1254,7 +1254,7 @@ class avi_metrics():
                                 vs_name = vs_dict[e['con_uuid']].replace('.','_')
                                 class graphite_class(): pass
                                 x = graphite_class
-                                x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.virtualservice.%s.serviceengine.%s' %(vs_name, se_name)
+                                x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.virtualservice.%s.serviceengine.%s' %(vs_name, se_name.replace('.','_'))
                                 x.value = 1
                                 if x not in discovered:
                                     discovered.append(x)
@@ -1265,7 +1265,7 @@ class avi_metrics():
                                 vs_name = vs_dict[e.rsplit('api/virtualservice/')[1]].replace('.','_')
                                 class graphite_class(): pass
                                 x = graphite_class
-                                x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.virtualservice.%s.serviceengine.%s' %(vs_name, se_name)
+                                x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.virtualservice.%s.serviceengine.%s' %(vs_name, se_name.replace('.','_'))
                                 x.value = 1
                                 if x not in discovered:
                                     discovered.append(x)
@@ -1345,7 +1345,7 @@ class avi_metrics():
                 vs_percentage_used = (se_dict[entry]['total_vs']/se_dict[entry]['max_vs'])*100
                 class graphite_class(): pass
                 x = graphite_class
-                x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.vs_capacity_used' %entry
+                x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.vs_capacity_used' %entry.replace('.','_')
                 x.value = vs_percentage_used
                 x.timestamp = int(time.time())
                 graphite_class_list.append(x)
@@ -1401,7 +1401,7 @@ class avi_metrics():
                             metric_name = entry['header']['name'].replace('.','_')
                             metric_value = entry['data'][0]['value']
                             x = graphite_class
-                            x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.virtualmachine.%s.%s' %(se_name, metric_name)
+                            x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.virtualmachine.%s.%s' %(se_name.replace('.','_'), metric_name)
                             x.value = metric_value
                             x.timestamp = int(time.time())
                             graphite_class_list.append(x)
