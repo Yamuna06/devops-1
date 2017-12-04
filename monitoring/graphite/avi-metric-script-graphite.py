@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 
-version = 'v2017-11-27'
+version = 'v2017-12-04'
 
 #########################################################################################
 #                                                                                       #
@@ -312,59 +312,6 @@ class avi_metrics():
 
     #-----------------------------------
 
-#    def srvc_engn_stats(self):
-#        try:
-#            temp_start_time = time.time()
-#            graphite_class_list = []
-#            discovered_ses = []  #--- this is used b/c se in admin show up in other tenants
-#            discovered_health = []
-#            se_dict = {}
-#            for t in self.tenants:
-#                srvc_engn_list = self.avi_request('serviceengine?page_size=1000',t['name']).json()
-#                if srvc_engn_list['count'] != 0:
-#                    for s in srvc_engn_list['results']:
-#                        se_dict[s['uuid']] = s['name']
-#                    avi_api = 'analytics/metrics/serviceengine/?metric_id=%s&page_size=1000&limit=1&step=300' %self.se_metric_list
-#                    se_stat = self.avi_request(avi_api,t['name']).json()['results']
-#                    for s in se_stat:
-#                        se_name = se_dict[s['entity_uuid']]
-#                        if se_name not in discovered_ses:
-#                            discovered_ses.append(se_name)
-#                            for entry in s['series']:
-#                                class graphite_class(): pass
-#                                metric_name = entry['header']['name'].replace('.','_')
-#                                metric_value = entry['data'][0]['value']
-#                                x = graphite_class
-#                                x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.%s' %(se_name, metric_name)
-#                                x.value = metric_value
-#                                x.timestamp = int(time.time())
-#                                graphite_class_list.append(x)
-#                    #----- PULL SERVICE ENGINE HEALTHSCORES
-#                    avi_api = 'analytics/healthscore/serviceengine?page_size=1000'
-#                    se_healthscore = self.avi_request(avi_api,t['name']).json()['results']
-#                    for s in se_healthscore:
-#                        se_name = se_dict[s['entity_uuid']]
-#                        if se_name not in discovered_health:
-#                            discovered_health.append(se_name)
-#                            class graphite_class(): pass
-#                            health_metric = s['series'][0]['data'][0]['value']
-#                            x = graphite_class
-#                            x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.healthscore' %se_name
-#                            x.value = health_metric
-#                            x.timestamp = int(time.time())
-#                            graphite_class_list.append(x)
-#                    self.se_vnic_portgroup(graphite_class_list,t['name']) #---- Run function to look at se portgroup membership
-#                    self.se_missed_hb(srvc_engn_list,graphite_class_list)  #---- Run function to look for missed heartbeats
-#            if len(graphite_class_list) > 0:
-#                send_class_list_graphite(graphite_class_list)
-#            temp_total_time = str(time.time()-temp_start_time)
-#            if args.debug == True:
-#                print(str(datetime.now())+' '+self.avi_controller+': func srvc_engn_stats completed, executed in '+temp_total_time+' seconds')
-#        except:
-#            print(str(datetime.now())+' '+self.avi_controller+': func srvc_engn_stats encountered an error')
-#            exception_text = traceback.format_exc()
-#            print(str(datetime.now())+' '+self.avi_controller+': '+exception_text)
-
 
     def srvc_engn_stats(self):
         try:
@@ -466,7 +413,7 @@ class avi_metrics():
                                         metric_name = cpu_resp['process_name'].replace('.','_')
                                         metric_value = cpu_resp['process_cpu_usage']
                                         x = graphite_class
-                                        x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.dispatcher_usage.%s' %(entry['name'], metric_name)
+                                        x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.dispatcher_usage.%s' %(entry['name'].replace('.','_'), metric_name)
                                         x.value = metric_value
                                         x.timestamp = int(time.time())
                                         graphite_class_list.append(x)
@@ -507,7 +454,6 @@ class avi_metrics():
                                             graphite_class_list.append(y)
                                 else:
                                     peer_state = 50
-                                #send_value_graphite('network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.bgp-peer.%s' %(se_name, peer_ip), peer_state, int(time.time()))
                                 class graphite_class(): pass
                                 x = graphite_class
                                 x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.bgp-peer.%s' %(se_name.replace('.','_'), peer_ip)
@@ -530,9 +476,7 @@ class avi_metrics():
     #--- This function will loop through all tenants pulling the following statistics
     #--- for all Virtual Services.
     def virtual_service_stats_threaded(self):
-        #tenants = self.avi_request('tenant?page_size=1000','admin')
         proc = []
-        #for t in tenants.json()['results']:
         for t in self.tenants:
             t_name = t['name']
             p = Process(target = self.virtual_service_stats, args = (t_name,))
@@ -594,11 +538,9 @@ class avi_metrics():
     def vs_metrics_per_se_threaded(self):
         try:
             temp_start_time = time.time()
-            #tenants = self.avi_request('tenant?page_size=1000','admin')
             vs_dict= {}
             proc = []
             admin_vs = []
-            #for t in tenants.json()['results']:
             for t in self.tenants:
                 virtual_services = self.avi_request('virtualservice?page_size=1000',t['name']).json()
                 if virtual_services['count'] !=0:
@@ -657,7 +599,7 @@ class avi_metrics():
                                 metric_name = d['header']['name'].replace('.','_')
                                 metric_value = d['data'][0]['value']
                                 x = graphite_class
-                                x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.virtualservice_stats.%s.%s' %(se_dict[se],vs_name,metric_name)
+                                x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.virtualservice_stats.%s.%s' %(se_dict[se].replace('.','_'),vs_name,metric_name)
                                 x.value = metric_value
                                 x.timestamp = int(time.time())
                                 graphite_class_list.append(x)
@@ -759,9 +701,7 @@ class avi_metrics():
     def vs_active_pool_members(self):
         try:
             temp_start_time = time.time()
-            #tenants = self.avi_request('tenant?page_size=1000','admin')
             graphite_class_list = []
-            #for t in tenants.json()['results']:
             for t in self.tenants:
                 avi_api = 'pool-inventory?page_size=1000'
                 pool_member_status = self.avi_request(avi_api,t['name']).json()
@@ -806,7 +746,6 @@ class avi_metrics():
                                     z.timestamp = int(time.time())
                                     graphite_class_list.append(z)
                         except:
-                            #_=1
                             exception_text = traceback.format_exc()
                             print(str(datetime.now())+' '+self.avi_controller+': '+exception_text)
             if len(graphite_class_list) > 0:
@@ -828,9 +767,6 @@ class avi_metrics():
     def vs_sig_log_count(self,v,tenant):
         try:
                 temp_start_time = time.time()
-            #graphite_class_list = []
-            #virtual_services = self.avi_request('virtualservice-inventory?page_size=1000','*').json()['results']
-            #for v in virtual_services:
                 class graphite_class(): pass
                 vs_name = v['config']['name'].replace('.','_')
                 vs_uuid = v['uuid']
@@ -839,17 +775,8 @@ class avi_metrics():
                 if 'count' in resp:
                     log_count = resp['count']
                     send_value_graphite('network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.virtualservice.%s.%s' %(vs_name, 'significant_log_count'), log_count, int(time.time()))
-                #x = graphite_class
-                #x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.virtualservice.%s.%s' %(vs_name, 'significant_log_count')
-                #x.value = log_count
-                #x.timestamp = int(time.time())
-                #graphite_class_list.append(x)
-                #send_class_list_graphite(graphite_class_list)
-                temp_total_time = str(time.time()-temp_start_time)
-                #print(str(datetime.now())+' '+self.avi_controller+': func vs_sig_log_count completed, executed in '+temp_total_time+' seconds')
-
         except:
-            #print(str(datetime.now())+' '+self.avi_controller+': func vs_sig_log_count encountered an error')
+            print(str(datetime.now())+' '+self.avi_controller+': func vs_sig_log_count encountered an error')
             exception_text = traceback.format_exc()
             print(str(datetime.now())+' '+self.avi_controller+': '+exception_text)
 
@@ -867,7 +794,6 @@ class avi_metrics():
                     proc.append(p)
                 for p in proc:
                     p.join()
-            #send_class_list_graphite(graphite_class_list)
             temp_total_time = str(time.time()-temp_start_time)
             if args.debug == True:
                 print(str(datetime.now())+' '+self.avi_controller+': func vs_sig_log_count_threaded completed, executed in '+temp_total_time+' seconds')
@@ -926,7 +852,7 @@ class avi_metrics():
                     class graphite_class(): pass
                     x = graphite_class
                     se_name = s['name']
-                    x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.%s' %(se_name, 'missed_heartbeats')
+                    x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.%s' %(se_name.replace('.','_'), 'missed_heartbeats')
                     x.value = s['hb_status']['num_hb_misses']
                     x.timestamp = int(time.time())
                     graphite_class_list.append(x)
@@ -1116,9 +1042,7 @@ class avi_metrics():
         try:
             temp_start_time = time.time()
             current_time = datetime.today()
-            #tenants = self.avi_request('tenant?page_size=1000','admin')
             graphite_class_list = []
-            #for t in tenants.json()['results']:
             for t in self.tenants:
                 ssl_certs = self.avi_request('sslkeyandcertificate?page_size=1000',t['name']).json()
                 if ssl_certs['count'] > 0:
@@ -1153,7 +1077,6 @@ class avi_metrics():
     def esx_srvc_engn_vs_count(self):
         try:
             temp_start_time = time.time()
-            #srvc_engn_list = self.avi_request('serviceengine','admin').json()['results']
             vm_esx_dict = {}
             page_number = 1
             loop = True
@@ -1235,11 +1158,9 @@ class avi_metrics():
     def virtual_service_hosted_se(self):
         try:
             temp_start_time = time.time()
-            #tenants = self.avi_request('tenant?page_size=1000','admin')
             vs_dict = {}
             graphite_class_list = []
             discovered = []
-            #for t in tenants.json()['results']:
             for t in self.tenants:
                 virtual_services = self.avi_request('virtualservice?page_size=1000',t['name']).json()
                 if virtual_services['count'] > 0:
@@ -1424,9 +1345,6 @@ class avi_metrics():
     def full_client_log_check(self):
         try:
             temp_start_time = time.time()
-            vs_full_log_count = 0 #---- NOT USING, can cleanup
-            #tenants = self.avi_request('tenant?page_size=1000','admin')
-            #for t in tenants.json()['results']:
             for t in self.tenants:
                 virtual_services = self.avi_request('virtualservice?page_size=1000',t['name']).json()
                 if virtual_services['count'] >0:
@@ -1434,7 +1352,6 @@ class avi_metrics():
                         if 'analytics_policy' in v.keys():
                             if 'full_client_logs' in v['analytics_policy'].keys():
                                 if v['analytics_policy']['full_client_logs']['enabled'] == True:
-                                    vs_full_log_count += 1 #---- NOT USING, can cleanup
                                     send_value_graphite('network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.virtualservice.%s.full_client_logs' %v['name'].replace('.','_'), 1, int(time.time()))
             temp_total_time = str(time.time()-temp_start_time)
             if args.debug == True:
@@ -1449,8 +1366,6 @@ class avi_metrics():
     def debug_vs_check(self):
         try:
             temp_start_time = time.time()
-            #tenants = self.avi_request('tenant?page_size=1000','admin')
-            #for t in tenants.json()['results']:
             for t in self.tenants:
                 virtual_services = self.avi_request('debugvirtualservice?page_size=1000',t['name']).json()
                 if virtual_services['count'] >0:
@@ -1478,7 +1393,7 @@ class avi_metrics():
                         if s['name'] not in discovered_ses:
                             discovered_ses.append(s['name'])
                             if 'flags' in s.keys():
-                                send_value_graphite('network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.debug_enabled' %s['name'], 1, int(time.time()))
+                                send_value_graphite('network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.debug_enabled' %s['name'].replace('.','_'), 1, int(time.time()))
                 temp_total_time = str(time.time()-temp_start_time)
                 if args.debug == True:
                     print(str(datetime.now())+' '+self.avi_controller+': func debug_vs_check completed, executed in '+temp_total_time+' seconds')
@@ -1554,9 +1469,7 @@ class avi_metrics():
         try:
             if (datetime.now().minute)%5 == 0:
                 temp_start_time = time.time()
-                #tenants = self.avi_request('tenant?page_size=1000','admin').json()['results']
                 vs_dict = {}
-                #for t in tenants:
                 for t in self.tenants:
                     vs_list = []
                     virtual_services = self.avi_request('virtualservice?page_size=1000',t['name']).json()
@@ -1617,11 +1530,8 @@ class avi_metrics():
     def get_avi_version(self):
         try:
             temp_start_time = time.time()
-            #current_version = self.avi_request('version/controller', 'admin').json()[0]['version'].split(' ',1)[0].split('(',1)[0].replace('.','_')
             current_version = self.avi_request('version/controller', 'admin').json()[0]['version'].split(' ',1)[0].replace('.','_')
             send_value_graphite('network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.current_version.%s' %current_version, 1, int(time.time()))
-            temp_name = 'network-script.avi.sc.lab.10_130_163_188.current_version.16_4_3(8972)'
-            #send_value_graphite(temp_name,1,int(time.time()))
             if args.debug == True:
                 temp_total_time = str(time.time()-temp_start_time)
                 print(str(datetime.now())+' '+self.avi_controller+': func get_avi_version completed, executed in '+temp_total_time+' seconds')
@@ -1655,14 +1565,11 @@ class avi_metrics():
             pool_server_metric_list = ','.join(pool_server_metric_list)
             graphite_class_list = []
             discovered_servers = [] #--- this is used b/c members in admin show up in other tenants
-            #tenants = self.avi_request('tenant?page_size=1000','admin')
             try:
-                #for t in tenants.json()['results']:
                 for t in self.tenants:
                     payload = {
                         "metric_requests": [
                             {
-                                #"start": "2017-09-18T20:20:00.000Z",
                                 "step": 300,
                                 "limit": 1,
                                 "aggregate_entity": False,
