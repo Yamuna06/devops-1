@@ -1,67 +1,29 @@
-# Graphite Integration
+# Appdynamics Integration
 
-This repository includes that necessary scripts to monitor Avi metrics and forward to Graphite.  
+This repository includes that necessary files to deploy the Appdynamics Avi Vantage monitoring extension.
 
 - **Requirements**
     - **python 2.7**
     - **python-requests**
 
 - **Files**
-    - **avi_controllers.json**:  This file contains the Avi Controller login information.  When new Avi controllers are deployed they need to be added and this file must be redeployed.
-    - **graphite_host.json**:  This file contains the graphite host and tcp port information.
-    - **avi_metrics-script-graphite.py**:  This script contains all the metrics values to be collected and forwards to graphite.
+    - **avi_controllers.json**:  This file contains the Avi Controller login information.  Any Avi controller that is desired to be monitored must be added to this file.
+    - **monitor.xml**:  The Avi Vantage monitor extension configuration file
+    - **avi_metrics.py**:  This python script containing all the API calls for metric values to be collected.
+    - **avi_metrics.sh**:  The shell script called by the Appdynamic standalone agent to execute the monitoring script.
 
 
 
 
 # Installation
-All 3 files are required and must exist within the same directory for successful metric gathering.
-
-
-# Usage
-## avi-metrics-script-graphite.py
-
-Below are the available arguments that can be provided.  None of these are required.
-
-See all available options
-```sh
-$ avi-metric-script-graphite.py -h
-```
-
-
-See current script version
-```sh
-$ avi-metric-script-graphite.py -v
-```
-
-
-Pull metrics from only the first controller in the list
-```sh
-$ avi-metric-script-graphite.py -t
-```
-
-
-Only print exceptions
-```sh
-$ avi-metric-script-graphite.py --brief
-```
-
-
-Print status of all metrics gathering functions - This is default
-```sh
-$ avi-metric-script-graphite.py --debug
-```
-
-
-Print namespace of what is being sent to Graphite.  Used for troubleshooting is metrics are missing
-```sh
-$ avi-metric-script-graphite.py -n
-```
+- Create a subdirectory within *<machine_agent_home>*/monitors.  
+- Copy all 4 files to this sub subdirectory
+- Restart the Appdynamics machine agent
 
 
 ## avi_controllers.json
 
-To Add an Additional Controller to Monitor this file will need to modified.  Password can be plaintext or base64 encoded.
+To Add Controllers to be Monitor this file will need to modified.  Password can be plaintext or base64 encoded.
 
 
 EXAMPLE:
@@ -78,7 +40,7 @@ EXAMPLE:
     },
     {
     "avi_controller":"169.254.0.2",
-    "location":"nj",
+    "location":"dc2",
     "environment":"dev",
     "avi_user":"user",
     "_comment":"ACCEPTS PLAINTEXT OR BASE64 ENCODED PASSWORD",
@@ -89,20 +51,46 @@ EXAMPLE:
 ```
 
 
-## graphite_host.json
 
-Define the graphite server host name/ip and the tcp port carbon cache is listening on
 
-EXAMPLE:
+# Troubleshooting
+There are two primary logs to investigate for issues; the Avi python script log and the Appdynamics machine agent log.
 
-```sh
-{"graphite":
-    {
-	    "server":"127.0.0.1",
-	    "server_port":2003
-    }
-}
-```
+- *<machine_agent_home>*/monitors/*subdirectory*/avi_metrics.log
+- *<machine_agent_home>*/logs/ machine-agent.log
+
+
+
+# Appdynamics Metric Limitations
+Appdynamics limits the number of metrics an agent can send as well as the number of metrics a controller can store.  The Avi Vantage monitoring extension can send a large number of metrics, especially as the deployment starts to scale and the number of the controllers clusters grows.  
+
+It is important to understand Appdynamics limitations for your environment as well as what metrics you find important to monitor from Avi Vantage.
+
+https://docs.appdynamics.com/display/PRO43/Metrics+Limits
+
+## How to Reduce the Number of Metrics
+It is important to understand your metrics limitations for Appdynamics and what metrics you find important to monitor from Avi Vantage.  If you are exceeding Appdynamics limitations for metrics the script will need to be modified to limit the number being sent.
+
+There are a few ways to limit the number of metrics being sent via the script.
+- Stop a function from running
+- Remove undesired Virtual Service, Pool Member or Service Engine Metrics from being collected
+
+### Stop a function from running ###
+There are a number of functions that run independently from one another to collect metrics.  Each function is added to a list to be run.  To disable a function from running, comment out the line where it's added to the list.
+
+The list is titled **test_functions**.  Search for **test_functions.append** in the python script to find the location for where to functions are added for execution, comment out the line with the unwanted function.
+
+
+### Remove undesired Virtual Service, Pool Member or Service Engine Metrics ###
+By default metrics are being pulled for all Virtual Services,
+The metrics being collected for Virtual Services, Pool Members and Service Engines are all contained within lists.  To stop a metric from being sent simply comment out line, making sure that it is still a correctly formatted list.
+
+Search the python script for the specific lists containing the metrics:
+- **vs_metric_list**
+- **pool_server_metric_list**
+- **se_metric_list**
+
+
 
 
 
