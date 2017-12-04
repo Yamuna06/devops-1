@@ -944,7 +944,7 @@ class avi_metrics():
 
 
     #-----------------------------------
-    def vcenter_monitor_counters(self):
+    def vcenter_monitor_counters(self):  #----- This API was removed in 17.2.4
         try:
             #----- Only run this function every 5 minutes
             if (datetime.now().minute)%5 == 0:
@@ -1644,7 +1644,7 @@ class avi_metrics():
             test_functions.append(self.vs_active_pool_members)
             test_functions.append(self.cluster_status)
             test_functions.append(self.vcenter_status)
-            test_functions.append(self.vcenter_monitor_counters)
+            #test_functions.append(self.vcenter_monitor_counters) #----- This API was removed in 17.2.4
             test_functions.append(self.apic_status)
             test_functions.append(self.avi_subnet_usage)
             test_functions.append(self.expiring_certs)
@@ -1683,7 +1683,7 @@ class avi_metrics():
             print(str(datetime.now())+' '+self.avi_controller+': controller specific tests have completed, executed in '+total_time+' seconds')
             send_value_graphite('network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.metricscript.executiontime', float(total_time)*1000, int(time.time()))
         except:
-            print('Unable to login to: '+self.avi_controller)
+            print(str(datetime.now())+' Unable to login to: '+self.avi_controller)
 
 
     #--- THIS METHOD KICKS OFF THE EXECUTION
@@ -1721,7 +1721,7 @@ def main():
     for p in proc:
         p.join()
     total_time = str(time.time()-start_time)
-    print('AVI_SCRIPT: metric script has completed, executed in '+total_time+' seconds')
+    print(str(datetime.now())+' AVI_SCRIPT: metric script has completed, executed in '+total_time+' seconds')
 
 
 
@@ -1745,7 +1745,7 @@ if 'EN_DOCKER' in os.environ:
         main()
         loop_total_time = time.time()-loop_start_time
         if loop_total_time < 60:
-            print('AVI_SCRIPT: sleeping for '+str(60 - datetime.now().second)+' seconds')
+            print(str(datetime.now())+' AVI_SCRIPT: sleeping for '+str(60 - datetime.now().second)+' seconds')
             time.sleep(60 - datetime.now().second)
 else:
     #----- Get the file path to import controller and graphite json, needed for cron
