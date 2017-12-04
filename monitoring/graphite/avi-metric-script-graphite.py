@@ -458,17 +458,18 @@ class avi_metrics():
                     for entry in srvc_engn_list:
                         if entry['uuid'] not in srvc_engn_dict:
                             srvc_engn_dict[entry['uuid']] = entry['name']
-                            dispatcher_usage = self.avi_request('serviceengine/%s/cpu' %entry['uuid'],t['name']).json()[0]['process_cpu_utilization']
-                            for cpu_resp in dispatcher_usage:
-                                if 'dp' in cpu_resp['process_name']:
-                                    class graphite_class(): pass
-                                    metric_name = cpu_resp['process_name'].replace('.','_')
-                                    metric_value = cpu_resp['process_cpu_usage']
-                                    x = graphite_class
-                                    x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.dispatcher_usage.%s' %(entry['name'], metric_name)
-                                    x.value = metric_value
-                                    x.timestamp = int(time.time())
-                                    graphite_class_list.append(x)
+                            dispatcher_usage = self.avi_request('serviceengine/%s/cpu' %entry['uuid'],t['name']).json()
+                            if type(dispatcher_usage) == list:
+                                for cpu_resp in dispatcher_usage[0]['process_cpu_utilization']:
+                                    if 'dp' in cpu_resp['process_name']:
+                                        class graphite_class(): pass
+                                        metric_name = cpu_resp['process_name'].replace('.','_')
+                                        metric_value = cpu_resp['process_cpu_usage']
+                                        x = graphite_class
+                                        x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.dispatcher_usage.%s' %(entry['name'], metric_name)
+                                        x.value = metric_value
+                                        x.timestamp = int(time.time())
+                                        graphite_class_list.append(x)
             if len(graphite_class_list) > 0:
                 send_class_list_graphite(graphite_class_list)
             temp_total_time = str(time.time()-temp_start_time)
@@ -1083,8 +1084,8 @@ class avi_metrics():
         try:
             temp_start_time = time.time()
             subnets = self.avi_request('networkruntime?page_size=1000','admin').json()['results']
+            graphite_class_list = []
             if len(subnets) > 0:
-                graphite_class_list = []
                 for s in subnets:
                     if 'subnet_runtime' in s.keys():
                         class graphite_class(): pass
