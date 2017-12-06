@@ -23,7 +23,7 @@ This repository includes that necessary files to deploy the Appdynamics Avi Vant
 
 ## avi_controllers.json
 
-To Add Controllers to be Monitor this file will need to modified.  Password can be plaintext or base64 encoded.
+Add Controllers to be monitored this file, password can be plaintext or base64 encoded.
 
 
 EXAMPLE:
@@ -69,7 +69,7 @@ It is important to understand Appdynamics limitations for your environment as we
 https://docs.appdynamics.com/display/PRO43/Metrics+Limits
 
 ## How to Reduce the Number of Metrics
-It is important to understand your metrics limitations for Appdynamics and what metrics you find important to monitor from Avi Vantage.  If you are exceeding Appdynamics limitations for metrics the script will need to be modified to limit the number being sent.
+If you are exceeding Appdynamics limitations for metrics the script will need to be modified to limit the number being sent.
 
 There are a few ways to limit the number of metrics being sent via the script.
 - Stop a function from running
@@ -78,12 +78,12 @@ There are a few ways to limit the number of metrics being sent via the script.
 ### Stop a function from running ###
 There are a number of functions that run independently from one another to collect metrics.  Each function is added to a list to be run.  To disable a function from running, comment out the line where it's added to the list.
 
-The list is titled **test_functions**.  Search for **test_functions.append** in the python script to find the location for where to functions are added for execution, comment out the line with the unwanted function.
+The list is titled **test_functions**.  Search for **test_functions.append** in the python script to find the location for where the functions are added for execution, comment out the line with the unwanted function/metrics.
 
 
 ### Remove undesired Virtual Service, Pool Member or Service Engine Metrics ###
-By default metrics are being pulled for all Virtual Services,
-The metrics being collected for Virtual Services, Pool Members and Service Engines are all contained within lists.  To stop a metric from being sent simply comment out line, making sure that it is still a correctly formatted list.
+By default there are numerous metrics being pulled for all Virtual Services, Service Engines and Pool Members.  
+The metrics being collected for Virtual Services, Pool Members and Service Engines are all contained within lists.  To stop a metric from being sent simply comment out the line, making sure that what is left is still a correctly formatted list.
 
 Search the python script for the specific lists containing the metrics:
 - **vs_metric_list**
@@ -100,14 +100,17 @@ Search the python script for the specific lists containing the metrics:
 
 ###Controller Cluster Metrics
 
-- Cluster status
+- Cluster node leader
+- Number of cluster nodes
 - Vcenter cloud connector status
 - ACI APIC connectivity status
-- Network pool Usage
+- Network pool usage
 - Expiring certs
-- How many cores on each ESX is being used for Service Engines
+- How many cores on each ESX host is being used for Service Engines
 - Days until license(s) expire
+- License usage percentage
 - Current Avi Vantage version
+
 
 
 
@@ -116,6 +119,7 @@ Search the python script for the specific lists containing the metrics:
 
 - Virtual Server count per Service Engine
 - Service Engine count
+- Service Enging healthscore
 - Statistics for each Service Engine
     - se_stats.avg_bandwidth
     - se_if.avg_bandwidth
@@ -159,16 +163,18 @@ Search the python script for the specific lists containing the metrics:
     - se_stats.avg_packet_buffer_large_usage
     - se_stats.avg_packet_buffer_small_usage
 - How many Service Engines hosted on an ESX host
-- Service Engine Virtual Service hosted used capacity
+- Service Engine Virtual Service hosted % used capacity
 - How many Service Engines have debug enabled
 - Service Engine individual Dispatcher CPU usage
+- Service Engine BGP peer status
+
 
 
 
 
 ###Virtual Service Stats
 
-- Statistics for each Virtual Service
+- Statistics for each Virtual Service (provided total and per SE)
     - l4_server.avg_errored_connections
     - l4_server.avg_rx_pkts
     - l4_server.avg_bandwidth
@@ -183,6 +189,7 @@ Search the python script for the specific lists containing the metrics:
     - l4_server.sum_sack_retransmits
     - l4_server.sum_timeout_retransmits
     - l4_server.apdexc
+    - l4_server.avg_total_rtt
     - l4_client.apdexc
     - l4_client.avg_bandwidth
     - l4_client.avg_application_dos_attacks
@@ -194,17 +201,16 @@ Search the python script for the specific lists containing the metrics:
     - l4_client.avg_tx_pkts
     - l4_client.avg_rx_bytes
     - l4_client.avg_tx_bytes
-    - l4_server.avg_total_rtt
-    - l4_client.avg_total_rtt
     - l4_client.avg_rx_pkts_dropped
     - l4_client.sum_packet_dropped_user_bandwidth_limit
     - l4_client.max_open_conns
     - l7_client.avg_complete_responses
+    - l7_client.avg_client_data_transfer_time
     - l7_client.avg_resp_4xx_avi_errors
     - l7_client.avg_resp_5xx_avi_errors
     - l7_client.avg_resp_4xx
     - l7_client.avg_resp_5xx
-    - l7_client.avg_clien_data_transfer_time
+    - l4_client.avg_total_rtt
     - l7_server.avg_resp_4xx
     - l7_server.avg_resp_5xx
     - l7_server.avg_resp_latency
@@ -217,6 +223,8 @@ Search the python script for the specific lists containing the metrics:
     - l7_server.pct_response_errors
     - l7_server.avg_frustrated_responses
     - l7_client.avg_frustrated_responses
+    - l7_client.avg_waf_attacks
+    - l7_client.pct_waf_attacks
     - dns_client.avg_complete_queries
     - dns_client.avg_domain_lookup_failures
     - dns_client.avg_tcp_queries
@@ -231,9 +239,13 @@ Search the python script for the specific lists containing the metrics:
     - dns_server.avg_tcp_queries
     - dns_server.avg_udp_queries
 - Virtual Service healthscore
-- Operational status (Up/Down)
+- Virtual Service total count
+- Virtual Service total up
+- Virtual Service total down
+- Virtual Service Total Disabled
+- Virtual Service individual Operational status (Up/Down)
 - Significant Log count
-- Pool member up/down status
+- Number of Pool members total/up/enabled
 - Which Service Engine the Virtual Service is hosted on
 - How many Virtual Services hosted on an ESX host
 - How many Virtual Services have full client logs enabled
