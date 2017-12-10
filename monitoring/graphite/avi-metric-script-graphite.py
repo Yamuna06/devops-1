@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 
-version = 'v2017-12-04'
+version = 'v2017-12-10'
 
 #########################################################################################
 #                                                                                       #
@@ -351,7 +351,8 @@ class avi_metrics():
                             }
                             ]}
                     realtime_stat = self.avi_post('analytics/metrics/collection?pad_missing_data=false', t['name'], payload).json()
-                    se_stat['series']['collItemRequest:AllSEs'].update(realtime_stat['series']['collItemRequest:AllSEs'])
+                    if 'series' in realtime_stat:
+                        se_stat['series']['collItemRequest:AllSEs'].update(realtime_stat['series']['collItemRequest:AllSEs'])
                     for s in se_stat['series']['collItemRequest:AllSEs']:
                         se_name = se_dict[s]
                         if se_name not in discovered_ses:
@@ -506,7 +507,8 @@ class avi_metrics():
                 payload =  {'metric_requests': [{'step' : 60, 'limit': 1, 'id': 'allvs', 'entity_uuid' : '*', 'metric_id': self.vs_metric_list}]}
                 realtime_stats = self.avi_post('analytics/metrics/collection?pad_missing_data=false', tenant, payload).json()
                 #----- overwrites real time vs' 5 min avg with the 1 min avg
-                vs_stats['series']['allvs'].update(realtime_stats['series']['allvs'])
+                if 'series' in realtime_stats:
+                    vs_stats['series']['allvs'].update(realtime_stats['series']['allvs'])
                 #----- THIS IS NEW
                 for v in vs_stats['series']['allvs']:
                     if v in vs_dict:
@@ -584,7 +586,8 @@ class avi_metrics():
             payload =  {'metric_requests': [{'step' : 60, 'limit': 1, 'id': 'vs_metrics_by_se', 'entity_uuid' : '*', 'serviceengine_uuid': se, 'include_refs': True, 'metric_id': self.vs_metric_list}]}
             realtime_stats = self.avi_post('analytics/metrics/collection?pad_missing_data=false', tenant, payload).json()
             #----- overwrite 5 min avg stats with 1 min avg stats for vs that have realtime stats enabled
-            vs_stats['series']['vs_metrics_by_se'].update(realtime_stats['series']['vs_metrics_by_se'])
+            if 'series' in realtime_stats:
+                vs_stats['series']['vs_metrics_by_se'].update(realtime_stats['series']['vs_metrics_by_se'])
             if len(vs_stats['series']['vs_metrics_by_se']) > 0:
                 for entry in vs_stats['series']['vs_metrics_by_se']:
                     if tenant == 'admin' and entry not in admin_vs:
