@@ -1585,22 +1585,23 @@ class avi_metrics():
                             ]}
                     api_url = 'analytics/metrics/collection?pad_missing_data=false&dimension_limit=1000&include_name=true&include_refs=true'
                     resp = self.avi_post(api_url,t['name'],payload)
-                    if len(resp.json()['series']['collItemRequest:AllServers']) != 0:
-                        for p in resp.json()['series']['collItemRequest:AllServers']:
-                            if p not in discovered_servers:
-                                discovered_servers.append(p)
-                                server_object = p.split(',')[2]
-                                for d in resp.json()['series']['collItemRequest:AllServers'][p]:
-                                    if 'data' in d:
-                                        pool_name = d['header']['pool_ref'].rsplit('#',1)[1]
-                                        vs_name = d['header']['entity_ref'].rsplit('#',1)[1]
-                                        metric_name = d['header']['name'].replace('.','_')
-                                        class graphite_class(): pass
-                                        x = graphite_class
-                                        x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.virtualservice.%s.pool.%s.%s.%s' %(vs_name.replace('.','_'), pool_name.replace('.','_'), server_object.replace('.','_'),metric_name)
-                                        x.value = d['data'][0]['value']
-                                        x.timestamp = int(time.time())
-                                        graphite_class_list.append(x)
+                    if 'series' in resp.json():
+                        if len(resp.json()['series']['collItemRequest:AllServers']) != 0:
+                            for p in resp.json()['series']['collItemRequest:AllServers']:
+                                if p not in discovered_servers:
+                                    discovered_servers.append(p)
+                                    server_object = p.split(',')[2]
+                                    for d in resp.json()['series']['collItemRequest:AllServers'][p]:
+                                        if 'data' in d:
+                                            pool_name = d['header']['pool_ref'].rsplit('#',1)[1]
+                                            vs_name = d['header']['entity_ref'].rsplit('#',1)[1]
+                                            metric_name = d['header']['name'].replace('.','_')
+                                            class graphite_class(): pass
+                                            x = graphite_class
+                                            x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.virtualservice.%s.pool.%s.%s.%s' %(vs_name.replace('.','_'), pool_name.replace('.','_'), server_object.replace('.','_'),metric_name)
+                                            x.value = d['data'][0]['value']
+                                            x.timestamp = int(time.time())
+                                            graphite_class_list.append(x)
             except:
                 print(str(datetime.now())+' '+self.avi_controller+': func pool_server_metrics encountered an error for tenant '+t['name'])
                 exception_text = traceback.format_exc()
