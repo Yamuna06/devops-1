@@ -166,8 +166,8 @@ class avi_metrics():
             'l7_server.pct_response_errors',
             'l7_server.avg_frustrated_responses',
             'l7_client.avg_frustrated_responses',
-            'l7_client.avg_waf_attacks',
-            'l7_client.pct_waf_attacks',
+            #'l7_client.avg_waf_attacks', #----- enabled in 17.2
+            #'l7_client.pct_waf_attacks', #----- enabled in 17.2
             'dns_client.avg_complete_queries',
             'dns_client.avg_domain_lookup_failures',
             'dns_client.avg_tcp_queries',
