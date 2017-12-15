@@ -112,14 +112,17 @@ EXAMPLE:
 
 ###Controller Cluster Metrics
 
-- Cluster status
+- Cluster node leader
+- Number of cluster nodes
 - Vcenter cloud connector status
 - ACI APIC connectivity status
-- Network pool Usage
+- Network pool usage
 - Expiring certs
-- How many cores on each ESX is being used for Service Engines
+- How many cores on each ESX host is being used for Service Engines
 - Days until license(s) expire
+- License usage percentage
 - Current Avi Vantage version
+
 
 
 
@@ -128,6 +131,7 @@ EXAMPLE:
 
 - Virtual Server count per Service Engine
 - Service Engine count
+- Service Enging healthscore
 - Statistics for each Service Engine
     - se_stats.avg_bandwidth
     - se_if.avg_bandwidth
@@ -171,16 +175,18 @@ EXAMPLE:
     - se_stats.avg_packet_buffer_large_usage
     - se_stats.avg_packet_buffer_small_usage
 - How many Service Engines hosted on an ESX host
-- Service Engine Virtual Service hosted used capacity
+- Service Engine Virtual Service hosted % used capacity
 - How many Service Engines have debug enabled
 - Service Engine individual Dispatcher CPU usage
+- Service Engine BGP peer status
+
 
 
 
 
 ###Virtual Service Stats
 
-- Statistics for each Virtual Service
+- Statistics for each Virtual Service (provided total and per SE)
     - l4_server.avg_errored_connections
     - l4_server.avg_rx_pkts
     - l4_server.avg_bandwidth
@@ -195,6 +201,7 @@ EXAMPLE:
     - l4_server.sum_sack_retransmits
     - l4_server.sum_timeout_retransmits
     - l4_server.apdexc
+    - l4_server.avg_total_rtt
     - l4_client.apdexc
     - l4_client.avg_bandwidth
     - l4_client.avg_application_dos_attacks
@@ -206,17 +213,16 @@ EXAMPLE:
     - l4_client.avg_tx_pkts
     - l4_client.avg_rx_bytes
     - l4_client.avg_tx_bytes
-    - l4_server.avg_total_rtt
-    - l4_client.avg_total_rtt
     - l4_client.avg_rx_pkts_dropped
     - l4_client.sum_packet_dropped_user_bandwidth_limit
     - l4_client.max_open_conns
     - l7_client.avg_complete_responses
+    - l7_client.avg_client_data_transfer_time
     - l7_client.avg_resp_4xx_avi_errors
     - l7_client.avg_resp_5xx_avi_errors
     - l7_client.avg_resp_4xx
     - l7_client.avg_resp_5xx
-    - l7_client.avg_clien_data_transfer_time
+    - l4_client.avg_total_rtt
     - l7_server.avg_resp_4xx
     - l7_server.avg_resp_5xx
     - l7_server.avg_resp_latency
@@ -229,6 +235,8 @@ EXAMPLE:
     - l7_server.pct_response_errors
     - l7_server.avg_frustrated_responses
     - l7_client.avg_frustrated_responses
+    - l7_client.avg_waf_attacks
+    - l7_client.pct_waf_attacks
     - dns_client.avg_complete_queries
     - dns_client.avg_domain_lookup_failures
     - dns_client.avg_tcp_queries
@@ -243,9 +251,13 @@ EXAMPLE:
     - dns_server.avg_tcp_queries
     - dns_server.avg_udp_queries
 - Virtual Service healthscore
-- Operational status (Up/Down)
+- Virtual Service total count
+- Virtual Service total up
+- Virtual Service total down
+- Virtual Service Total Disabled
+- Virtual Service individual Operational status (Up/Down)
 - Significant Log count
-- Pool member up/down status
+- Number of Pool members total/up/enabled
 - Which Service Engine the Virtual Service is hosted on
 - How many Virtual Services hosted on an ESX host
 - How many Virtual Services have full client logs enabled
