@@ -131,7 +131,7 @@ EXAMPLE:
 
 - Virtual Server count per Service Engine
 - Service Engine count
-- Service Enging healthscore
+- Service Engine healthscore
 - Statistics for each Service Engine
     - se_stats.avg_bandwidth
     - se_if.avg_bandwidth
