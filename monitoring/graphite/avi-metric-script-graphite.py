@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 
-version = 'v2017-12-10'
+version = 'v2018-01-24'
 
 #########################################################################################
 #                                                                                       #
@@ -79,12 +79,12 @@ def send_value_graphite(name, value, timestamp):
 
 
 #----- This function is used to loop through a list of Classes and send to
-#----- graphite.  Intent is single socket creation and close
+#----- graphite.  Intent is single socket creation, bulk send and close
 #----- Classes in list require 3 attributes:
 #-----    1.  name_space
 #-----    2.  value
 #-----    3.  timestamp
-def send_class_list_graphite(class_list):
+def send_class_list_graphite_old(class_list):
     socket.setdefaulttimeout(10)
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((graphite_server, graphite_port))
@@ -93,6 +93,22 @@ def send_class_list_graphite(class_list):
             print '=====> NAMESPACE:  '+entry.name_space
         sock.send('%s %d %d\n' % (entry.name_space, entry.value, entry.timestamp))
     sock.close()
+
+
+
+def send_class_list_graphite(class_list):
+    message_list = []
+    for entry in class_list:
+        if args.namespace == True:
+            print '=====> NAMESPACE:  '+entry.name_space
+        message_list.append('%s %d %d' % (entry.name_space, entry.value, entry.timestamp))
+    message = '\n'.join(message_list) + '\n'
+    socket.setdefaulttimeout(10)
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect((graphite_server, graphite_port))
+    sock.send(message)
+    sock.close()
+
 
 
 
@@ -224,8 +240,22 @@ class avi_metrics():
             'se_stats.avg_packet_buffer_header_usage',
             'se_stats.avg_packet_buffer_large_usage',
             'se_stats.avg_packet_buffer_small_usage']
-        #----
         self.se_metric_list = ','.join(se_metric_list)
+        controller_metric_list  = [
+            'controller_stats.avg_cpu_usage',
+            'controller_stats.avg_disk_usage',
+            'controller_stats.avg_mem_usage']
+        self.controller_metric_list = ','.join(controller_metric_list)
+        controller_process_metric_list = [
+            'process_stats.avg_rss',
+            'process_stats.avg_swap',
+            'process_stats.max_cpu_pct',
+            'process_stats.avg_num_threads',
+            'process_stats.avg_fds',
+            'process_stats.avg_pss',
+            'process_stats.avg_vms']
+        self.controller_process_metric_list = ','.join(controller_process_metric_list)
+        #----
 
 
     def avi_login(self):
@@ -354,33 +384,35 @@ class avi_metrics():
                     if 'series' in realtime_stat:
                         se_stat['series']['collItemRequest:AllSEs'].update(realtime_stat['series']['collItemRequest:AllSEs'])
                     for s in se_stat['series']['collItemRequest:AllSEs']:
-                        se_name = se_dict[s]
-                        if se_name not in discovered_ses:
-                            discovered_ses.append(se_name)
-                            for entry in se_stat['series']['collItemRequest:AllSEs'][s]:
-                                if 'data' in entry:
-                                    class graphite_class(): pass
-                                    metric_name = entry['header']['name'].replace('.','_')
-                                    metric_value = entry['data'][0]['value']
-                                    x = graphite_class
-                                    x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.%s' %(se_name.replace('.','_'), metric_name)
-                                    x.value = metric_value
-                                    x.timestamp = int(time.time())
-                                    graphite_class_list.append(x)
+                        if s in se_dict:
+                            se_name = se_dict[s]
+                            if se_name not in discovered_ses:
+                                discovered_ses.append(se_name)
+                                for entry in se_stat['series']['collItemRequest:AllSEs'][s]:
+                                    if 'data' in entry:
+                                        class graphite_class(): pass
+                                        metric_name = entry['header']['name'].replace('.','_')
+                                        metric_value = entry['data'][0]['value']
+                                        x = graphite_class
+                                        x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.%s' %(se_name.replace('.','_'), metric_name)
+                                        x.value = metric_value
+                                        x.timestamp = int(time.time())
+                                        graphite_class_list.append(x)
                     #----- PULL SERVICE ENGINE HEALTHSCORES
                     avi_api = 'analytics/healthscore/serviceengine?page_size=1000'
                     se_healthscore = self.avi_request(avi_api,t['name']).json()['results']
                     for s in se_healthscore:
-                        se_name = se_dict[s['entity_uuid']]
-                        if se_name not in discovered_health:
-                            discovered_health.append(se_name)
-                            class graphite_class(): pass
-                            health_metric = s['series'][0]['data'][0]['value']
-                            x = graphite_class
-                            x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.healthscore' %se_name.replace('.','_')
-                            x.value = health_metric
-                            x.timestamp = int(time.time())
-                            graphite_class_list.append(x)
+                        if s['entity_uuid'] in se_dict:
+                            se_name = se_dict[s['entity_uuid']]
+                            if se_name not in discovered_health:
+                                discovered_health.append(se_name)
+                                class graphite_class(): pass
+                                health_metric = s['series'][0]['data'][0]['value']
+                                x = graphite_class
+                                x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.healthscore' %se_name.replace('.','_')
+                                x.value = health_metric
+                                x.timestamp = int(time.time())
+                                graphite_class_list.append(x)
                     self.se_vnic_portgroup(graphite_class_list,t['name']) #---- Run function to look at se portgroup membership
                     self.se_missed_hb(srvc_engn_list,graphite_class_list)  #---- Run function to look for missed heartbeats
             if len(graphite_class_list) > 0:
@@ -433,34 +465,39 @@ class avi_metrics():
     def se_bgp_peer_state(self):
         try:
             temp_start_time = time.time()
-            srvc_engn_list = self.avi_request('serviceengine?page_size=1000','admin').json()['results']
             graphite_class_list = []
-            for s in srvc_engn_list:
-                b = self.avi_request('serviceengine/'+s['uuid']+'/bgp','admin').json()
-                if type(b) == list:
-                    for entry in b:
-                        if 'peers' in entry:
-                            se_name = s['name']
-                            for p in entry['peers']:
-                                peer_ip = p['peer_ip'].replace('.','_')
-                                if 'Established' in p['bgp_state']:
-                                    peer_state = 100
-                                    if len(p['vs_names']) > 0:
-                                        for v in p['vs_names']:
-                                            class graphite_class(): pass
-                                            y = graphite_class
-                                            y.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.advertised_vs.%s.%s' %(se_name.replace('.','_'), v.replace('.','_'), peer_ip)
-                                            y.value = 1
-                                            y.timestamp = int(time.time())
-                                            graphite_class_list.append(y)
-                                else:
-                                    peer_state = 50
-                                class graphite_class(): pass
-                                x = graphite_class
-                                x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.bgp-peer.%s' %(se_name.replace('.','_'), peer_ip)
-                                x.value = peer_state
-                                x.timestamp = int(time.time())
-                                graphite_class_list.append(x)
+            discovered_se = []
+            for t in self.tenants:
+                srvc_engn_list = self.avi_request('serviceengine?page_size=1000',t['name']).json()['results']
+                for s in srvc_engn_list:
+                    if s not in discovered_se:
+                        if t['name'] == 'admin':
+                            discovered_se.append(s)
+                        b = self.avi_request('serviceengine/'+s['uuid']+'/bgp',t['name']).json()
+                        if type(b) == list:
+                            for entry in b:
+                                if 'peers' in entry:
+                                    se_name = s['name']
+                                    for p in entry['peers']:
+                                        peer_ip = p['peer_ip'].replace('.','_')
+                                        if 'Established' in p['bgp_state']:
+                                            peer_state = 100
+                                            if len(p['vs_names']) > 0:
+                                                for v in p['vs_names']:
+                                                    class graphite_class(): pass
+                                                    y = graphite_class
+                                                    y.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.advertised_vs.%s.%s' %(se_name.replace('.','_'), v.replace('.','_'), peer_ip)
+                                                    y.value = 1
+                                                    y.timestamp = int(time.time())
+                                                    graphite_class_list.append(y)
+                                        else:
+                                            peer_state = 50
+                                        class graphite_class(): pass
+                                        x = graphite_class
+                                        x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.serviceengine.%s.bgp-peer.%s' %(se_name.replace('.','_'), peer_ip)
+                                        x.value = peer_state
+                                        x.timestamp = int(time.time())
+                                        graphite_class_list.append(x)
             if len(graphite_class_list) > 0:
                 send_class_list_graphite(graphite_class_list)
             temp_total_time = str(time.time()-temp_start_time)
@@ -1533,8 +1570,8 @@ class avi_metrics():
     def get_avi_version(self):
         try:
             temp_start_time = time.time()
-            current_version = self.avi_request('version/controller', 'admin').json()[0]['version'].split(' ',1)[0].replace('.','_')
-            send_value_graphite('network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.current_version.%s' %current_version, 1, int(time.time()))
+            current_version = self.login.json()['version']['Version']+'('+str(self.login.json()['version']['build'])+')'
+            send_value_graphite('network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.current_version.%s' %current_version.replace('.','_'), 1, int(time.time()))
             if args.debug == True:
                 temp_total_time = str(time.time()-temp_start_time)
                 print(str(datetime.now())+' '+self.avi_controller+': func get_avi_version completed, executed in '+temp_total_time+' seconds')
@@ -1619,6 +1656,52 @@ class avi_metrics():
 
 
 
+    #-----------------------------------
+    #----- GET Pool Member specific statistics - WORKING ON
+    def controller_cluster_metrics(self):
+        try:
+            temp_start_time = time.time()
+            major,minor = login.json()['version']['Version'].rsplit('.',1)
+            if float(major) >= 17.2 and float(minor) >= 6: #----- controller metrics api introduced in 17.2.6
+                cluster_uuid = self.avi_request('cluster','admin').json()['uuid']
+                resp = self.avi_request('analytics/metrics/controller/%s/?metric_id=%s&limit=1&step=300&?aggregate_entity=False' %(cluster_uuid,controller_metric_list),'admin').json()
+        except:
+            print(str(datetime.now())+' '+self.avi_controller+': func controller_cluster_metrics encountered an error encountered an error')
+            exception_text = traceback.format_exc()
+            print(str(datetime.now())+' '+self.avi_controller+': '+exception_text)
+
+
+
+    #-----------------------------------
+    #----- Monitor K8S/Openshift API queue
+    def k8s_pending_api(self):
+        try:
+            temp_start_time = time.time()
+            uuid_list = []
+            clouds = self.avi_request('cloud','admin')
+            if 'results' in clouds.json():
+                for c in clouds.json()['results']:
+                    if 'CLOUD_OSHIFT_K8S' in c['vtype']:
+                        uuid_list.append(c['uuid'])
+            for u in uuid_list:
+                resp = self.avi_request('cloud/%s/internals' %u,'admin').json()
+                cloud_name = resp['agents'][0]['cc_name'].replace('.','_')
+                pending_api = resp['agents'][0]['oshift_k8s']['num_pending_apis']
+                send_value_graphite('network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.k8s.%s.pending_apis' %cloud_name, pending_api, int(time.time()))
+            temp_total_time = str(time.time()-temp_start_time)
+            if args.debug == True:
+                print(str(datetime.now())+' '+self.avi_controller+': k8s_pending_api, executed in '+temp_total_time+' seconds')
+        except:
+            print(str(datetime.now())+' '+self.avi_controller+': func k8s_pending_api encountered an error encountered an error')
+            exception_text = traceback.format_exc()
+            print(str(datetime.now())+' '+self.avi_controller+': '+exception_text)
+
+
+
+
+
+
+
 #-----------------------------------
 #-----------------------------------
 #-----------------------------------
@@ -1663,6 +1746,7 @@ class avi_metrics():
             test_functions.append(self.license_expiration)
             test_functions.append(self.get_avi_version)
             test_functions.append(self.pool_server_metrics)
+            test_functions.append(self.k8s_pending_api)
             #test_functions.append(self.pool_member_sig_logs_threaded)
             #test_functions.append(self.service_engine_vm_stats)
             #-----------------------------------
