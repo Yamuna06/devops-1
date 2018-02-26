@@ -97,17 +97,17 @@ def send_class_list_graphite_old(class_list):
 
 
 def send_class_list_graphite(class_list):
-    message_list = []
-    for entry in class_list:
-        if args.namespace == True:
-            print '=====> NAMESPACE:  '+entry.name_space
-        message_list.append('%s %d %d' % (entry.name_space, entry.value, entry.timestamp))
-    message = '\n'.join(message_list) + '\n'
-    socket.setdefaulttimeout(10)
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect((graphite_server, graphite_port))
-    sock.send(message)
-    sock.close()
+   socket.setdefaulttimeout(10)
+   sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+   sock.connect((graphite_server, graphite_port))
+   message_list = []
+   for entry in class_list:
+       if args.namespace == True:
+           print '=====> NAMESPACE:  '+entry.name_space
+       message_list.append('%s %d %d' % (entry.name_space, entry.value, entry.timestamp))
+   message = '\n'.join(message_list) + '\n'
+   sock.send(message)
+   sock.close()
 
 
 
@@ -1657,14 +1657,38 @@ class avi_metrics():
 
 
     #-----------------------------------
-    #----- GET Pool Member specific statistics - WORKING ON
+    #----- GET controller Member specific statistics - WORKING ON
     def controller_cluster_metrics(self):
         try:
             temp_start_time = time.time()
-            major,minor = login.json()['version']['Version'].rsplit('.',1)
+            major,minor = self.login.json()['version']['Version'].rsplit('.',1)
             if float(major) >= 17.2 and float(minor) >= 6: #----- controller metrics api introduced in 17.2.6
-                cluster_uuid = self.avi_request('cluster','admin').json()['uuid']
-                resp = self.avi_request('analytics/metrics/controller/%s/?metric_id=%s&limit=1&step=300&?aggregate_entity=False' %(cluster_uuid,controller_metric_list),'admin').json()
+                cluster= self.avi_request('cluster','admin').json()
+                cluster_nodes = {}
+                temp_list=[]
+                graphite_class_list = []
+                for c in cluster['nodes']:
+                    #cluster_nodes[c['vm_uuid']]=c['ip']['addr'].replace('.','_')
+                    cluster_nodes[c['vm_uuid']]=c['vm_hostname'].replace('.','_')
+                    resp = self.avi_request('analytics/metrics/controller/%s/?metric_id=%s&limit=1&step=300&?aggregate_entity=False' %(c['vm_uuid'],self.controller_metric_list),'admin').json()
+                    temp_list.append(resp)
+                for n in temp_list:
+                    node = cluster_nodes[n['entity_uuid']]
+                    for m in n['series']:
+                        metric_name = m['header']['name'].replace('.','_')
+                        class graphite_class(): pass
+                        x = graphite_class
+                        x.name_space = 'network-script.avi.'+self.host_location+'.'+self.host_environment+'.'+self.avi_controller.replace('.','_')+'.controller.%s.%s' %(node,metric_name)
+                        x.value = m['data'][0]['value']
+                        x.timestamp = int(time.time())
+                        graphite_class_list.append(x)
+                if len(graphite_class_list) > 0:
+                    send_class_list_graphite(graphite_class_list)
+            else:
+                pass
+            temp_total_time = str(time.time()-temp_start_time)
+            if args.debug == True:
+                print(str(datetime.now())+' '+self.avi_controller+': controller_cluster_metrics, executed in '+temp_total_time+' seconds')
         except:
             print(str(datetime.now())+' '+self.avi_controller+': func controller_cluster_metrics encountered an error encountered an error')
             exception_text = traceback.format_exc()
@@ -1746,7 +1770,8 @@ class avi_metrics():
             test_functions.append(self.license_expiration)
             test_functions.append(self.get_avi_version)
             test_functions.append(self.pool_server_metrics)
-            test_functions.append(self.k8s_pending_api)
+            test_functions.append(self.controller_cluster_metrics)
+            #test_functions.append(self.k8s_pending_api)
             #test_functions.append(self.pool_member_sig_logs_threaded)
             #test_functions.append(self.service_engine_vm_stats)
             #-----------------------------------
